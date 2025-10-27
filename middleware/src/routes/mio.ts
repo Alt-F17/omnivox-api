@@ -6,7 +6,7 @@ const mioManager: {[id: string]: MioManager} = {};
 
 router.use(async (req, res, next) => {
     if (!mioManager[req.session.id]) {
-        mioManager[req.session.id] = await MioManager.build(req.session.omnivoxCookie!);
+        mioManager[req.session.id] = await MioManager.build();
     } 
     next();
 });

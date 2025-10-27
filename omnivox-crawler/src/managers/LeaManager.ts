@@ -31,7 +31,7 @@ export class LeaManager {
     return this.classDocumentMap.get(name);
   }
 
-  private async getClassDocumentSummary() {
+  async getClassDocumentSummary() {
     if (this.classesDocumentSummary.length == 0) {
       this.classesDocumentSummary = await getLeaDocumentSummary();
       this.classesDocumentSummary.forEach(async summary => {

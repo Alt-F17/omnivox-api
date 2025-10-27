@@ -67,11 +67,15 @@ router.use('/api/login', async (req, res, next) => {
     ses.username = req.body.username as string;
     ses.password = req.body.password as string;
     try {
-        ses.omnivoxCookie = (await omnivoxLogin(ses.username!, ses.password!)).getCache();
-        logged.push(ses.id);
-        return res.status(200).json("Logged in!");
+        const loginSuccess = await omnivoxLogin(ses.username!, ses.password!);
+        if (loginSuccess) {
+            logged.push(ses.id);
+            return res.status(200).json("Logged in!");
+        } else {
+            return res.status(401).json("Invalid credentials");
+        }
     } catch (error) {
-        res.status(200).json(error);
+        res.status(500).json(error);
         ses.destroy(() => console.log(JSON.stringify(error)));
     }
 

@@ -6,7 +6,7 @@ const leaManager: {[id: string]: LeaManager} = {};
 
 router.use(async (req, res, next) => {
     if (!leaManager[req.session.id]) {
-        leaManager[req.session.id] = await LeaManager.build(req.session.omnivoxCookie!);
+        leaManager[req.session.id] = await LeaManager.build();
     } 
     next();
 });

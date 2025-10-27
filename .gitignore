@@ -1,5 +1,8 @@
 build/
 
+# Archive folder (old REST/GraphQL implementations)
+archive/
+
 =======
 # Logs
 logs
