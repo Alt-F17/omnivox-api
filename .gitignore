@@ -1,5 +1,8 @@
 build/
 
+# Python virtual environment
+venv/
+
 # Archive folder (old REST/GraphQL implementations)
 archive/
 
