@@ -59,7 +59,7 @@ class MioManager:
         Returns:
             List of MioPreview objects (up to 50 recent messages)
             
-        Reference: omnivox-crawler/src/modules/Mio.ts
+        Reference: archive/omnivox-crawler/src/modules/Mio.ts
         """
         try:
             response = self.session.get(self.MIO_LIST_URL)
@@ -68,27 +68,33 @@ class MioManager:
             soup = BeautifulSoup(response.text, 'html.parser')
             previews = []
             
-            # Extract message IDs from checkboxes (pattern: chk{ID})
-            id_pattern = re.compile(r'chk([a-f0-9\-]{36})', re.IGNORECASE)
-            ids = id_pattern.findall(response.text)
+            # Extract message IDs from checkboxes (pattern: chk + 37 chars)
+            # TypeScript: let idRegex: RegExp = new RegExp("chk.{37}", 'gm');
+            # ids = [...request.data.matchAll(idRegex)].map(match => match[0].substring(3));
+            id_pattern = re.compile(r'chk.{37}', re.IGNORECASE | re.MULTILINE)
+            id_matches = id_pattern.findall(response.text)
+            ids = [match[3:] for match in id_matches]  # Remove "chk" prefix (first 3 chars)
             
             # Extract authors
             authors = [elem.get_text(strip=True) for elem in soup.select('.name')]
             
-            # Extract titles and short descriptions
+            # Extract titles
             title_divs = soup.select('.lsTdTitle > div > em')
             titles = [elem.get_text(strip=True) for elem in title_divs]
             
+            # Extract short descriptions
             desc_divs = soup.select('.lsTdTitle > div')
             short_descs = [remove_extra_whitespace(elem.get_text(strip=True)) for elem in desc_divs]
             
             # Combine into MioPreview objects
-            for i in range(min(len(ids), len(authors), len(titles))):
+            # TypeScript loop: for (let i = 0; i < ids[i].length; i++)
+            # This looks like a bug in TS (should be ids.length), but we'll match the intent
+            for i in range(min(len(ids), len(authors), len(titles), len(short_descs))):
                 previews.append(MioPreview(
                     id=ids[i],
-                    author=authors[i] if i < len(authors) else "",
-                    title=titles[i] if i < len(titles) else "",
-                    short_desc=short_descs[i] if i < len(short_descs) else ""
+                    author=authors[i],
+                    title=titles[i],
+                    short_desc=short_descs[i]
                 ))
             
             return previews
@@ -109,7 +115,7 @@ class MioManager:
         Raises:
             NotFoundError: If message not found
             
-        Reference: omnivox-crawler/src/modules/MioDetail.ts
+        Reference: archive/omnivox-crawler/src/modules/MioDetail.ts
         """
         # Check cache first
         if message_id in self._cached_messages:
@@ -123,14 +129,19 @@ class MioManager:
             soup = BeautifulSoup(response.text, 'html.parser')
             
             # Check if message exists
+            # TypeScript: if (!contenuWrapper) { throw new Error("mio not found") };
             content_wrapper = soup.select_one('#contenuWrapper')
             if not content_wrapper:
                 raise NotFoundError(f"Message {message_id} not found")
             
             # Extract message content
-            content = remove_extra_whitespace(content_wrapper.get_text(strip=True))
+            # TypeScript: let messageBody = root.querySelector("#contenuWrapper")!.text;
+            #             messageBody = removeSpaces(messageBody);
+            content = content_wrapper.get_text(strip=True)
+            content = remove_extra_whitespace(content)
             
-            # Extract metadata
+            # Extract metadata - TypeScript uses .textContent for these
+            # const from: string = root.querySelector(".cDe")!.textContent;
             from_elem = soup.select_one('.cDe')
             to_elem = soup.select_one('#tdACont')
             title_elem = soup.select_one('.cSujet')

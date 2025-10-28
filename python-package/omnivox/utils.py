@@ -34,39 +34,50 @@ def remove_extra_whitespace(text: str) -> str:
     """
     Remove excessive whitespace from text.
     
+    TypeScript reference: 
+    const removeWhiteSpace = new RegExp(" {2,}|" + String.fromCharCode(160) + "{2,}", "gm");
+    return str.replace(removeWhiteSpace, '\n');
+    
+    This replaces 2+ spaces OR 2+ non-breaking spaces (char 160) with newline.
+    
     Args:
         text: Text to clean
         
     Returns:
         Text with normalized whitespace
+        
+    Reference: archive/omnivox-crawler/src/utils/HTMLDecoder.ts
     """
-    # Replace multiple spaces with single space
-    text = re.sub(r' {2,}', '\n', text)
-    # Replace non-breaking spaces
-    text = re.sub(r'\xa0{2,}', '\n', text)
-    return text.strip()
+    # String.fromCharCode(160) is non-breaking space (\xa0)
+    # Replace 2+ regular spaces OR 2+ non-breaking spaces with newline
+    pattern = re.compile(r' {2,}|\xa0{2,}', re.MULTILINE)
+    return pattern.sub('\n', text)
 
 
 def extract_k_token(html: str) -> Optional[str]:
     """
     Extract the 'k' authentication token from Omnivox login page HTML.
     
+    This matches the TypeScript logic exactly:
+    const init = answer.search("value=\"6") + "value=.".length;
+    const k = answer.substring(init, init + 18);
+    
     Args:
         html: HTML content of login page
         
     Returns:
         The k token if found, None otherwise
+        
+    Reference: archive/omnivox-crawler/src/modules/Login.ts
     """
-    # Look for value="6..." pattern
-    match = re.search(r'value="(6[^"]{17})"', html)
-    if match:
-        return match.group(1)
-    
-    # Alternative: look for the token after "value="
-    start = html.find('value="6')
-    if start != -1:
-        start += len('value="')
-        return html[start:start + 18]
+    # Find the position of 'value="6' and add the length of 'value="' (7 chars)
+    init = html.find('value="6')
+    if init != -1:
+        init += len('value="')
+        k_token = html[init:init + 18]
+        # Verify it's actually 18 characters
+        if len(k_token) == 18:
+            return k_token
     
     return None
 

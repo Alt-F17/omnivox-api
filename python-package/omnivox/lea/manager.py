@@ -1,5 +1,6 @@
 """LEA Manager for accessing Learning Environment data."""
 
+import re
 import requests
 from bs4 import BeautifulSoup
 from typing import Optional
@@ -135,20 +136,31 @@ class LeaManager:
             teacher = ""
         
         # Extract grades
+        # Reference: archive/omnivox-crawler/src/modules/lea/Lea.ts lines 34-48
         notes = card.select('.note-principale')
         grade = None
         average = None
         median = None
         
+        # Grade is always in notes[0]
         if len(notes) > 0:
             grade_text = notes[0].get_text(strip=True)
-            # Check if grade is empty (" -  " with special whitespace)
+            # Check if grade is empty (" -  " with special whitespace character)
+            # TS: if (grade == " -  ") { grade = undefined; }
             if grade_text and grade_text not in ['-', ' - ', ' -  ']:
                 grade = grade_text
         
-        if len(notes) > 2:
-            average = safe_float(notes[-2].get_text(strip=True))
-            median = safe_float(notes[-1].get_text(strip=True))
+        # Average and median logic from TypeScript:
+        # if (notes.length > 3) {
+        #   average = parseInt(notes[2].text);
+        #   median = parseInt(notes[3].text);
+        # } else {
+        #   average = parseInt(notes[1].text) || undefined;
+        #   median = parseInt(notes[2].text) || undefined;
+        # }
+        if len(notes) > 3:
+            average = safe_float(notes[2].get_text(strip=True))
+            median = safe_float(notes[3].get_text(strip=True))
         elif len(notes) > 1:
             average = safe_float(notes[1].get_text(strip=True))
             if len(notes) > 2:
@@ -288,14 +300,29 @@ class LeaManager:
                     
                     name = name_elem.get_text(strip=True)
                     
+                    # Description cleaning: replace tabs, carriage returns, newlines with single newline
+                    # TypeScript: let cleanRegex = RegExp("([\t\r\n]){1,}", "gm");
+                    #             description = description.replace(cleanRegex, '\n');
                     desc_elem = row.select_one('.divDescriptionDocumentDansListe')
-                    description = decode_html_entities(desc_elem.get_text(strip=True)) if desc_elem else ""
-                    description = remove_extra_whitespace(description)
+                    if desc_elem:
+                        description = desc_elem.get_text(strip=True)
+                        # Replace 1+ occurrences of tab/CR/LF with single newline
+                        description = re.sub(r'[\t\r\n]+', '\n', description)
+                    else:
+                        description = ""
                     
+                    # Posted date: TypeScript gets text after "since" 
+                    # posted = document.querySelector(".DocDispo")!.text.substring("since".length);
                     posted_elem = row.select_one('.DocDispo')
-                    posted = posted_elem.get_text(strip=True).replace('since', '').strip() if posted_elem else ""
+                    if posted_elem:
+                        posted_text = posted_elem.get_text(strip=True)
+                        # Remove "since" prefix if present
+                        posted = posted_text[len('since'):].strip() if posted_text.startswith('since') else posted_text
+                    else:
+                        posted = ""
                     
                     # Check if document has been viewed
+                    # TypeScript: viewed = document.querySelector("#colonneEtoileVisualisation")!.childNodes.length == 1;
                     viewed_elem = row.select_one('#colonneEtoileVisualisation')
                     viewed = len(viewed_elem.contents) == 1 if viewed_elem else False
                     

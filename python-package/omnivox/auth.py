@@ -15,7 +15,7 @@ class OmnivoxAuth:
     This class manages the session and cookies required to interact with Omnivox.
     It uses the same authentication flow as the TypeScript implementation.
     
-    Reference: omnivox-crawler/src/modules/Login.ts
+    Reference: archive/omnivox-crawler/src/modules/Login.ts
     """
     
     BASE_URL = "https://dawsoncollege.omnivox.ca"
@@ -29,7 +29,7 @@ class OmnivoxAuth:
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
         })
-        self._authenticated = False
+        self._authenticated = False # Authentication state
     
     def login(self, username: str, password: str) -> bool:
         """

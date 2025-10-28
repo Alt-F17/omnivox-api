@@ -2,9 +2,8 @@ build/
 
 # Python virtual environment
 venv/
+.venv/
 
-# Archive folder (old REST/GraphQL implementations)
-archive/
 
 =======
 # Logs
