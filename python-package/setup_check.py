@@ -6,6 +6,7 @@ This will check dependencies and environment setup.
 
 import sys
 import subprocess
+import os
 
 
 def check_python_version():
@@ -25,6 +26,9 @@ def install_dependencies():
     """Install required dependencies."""
     print("\n📦 Installing dependencies...")
     
+    # Get the directory containing this script
+    package_dir = os.path.dirname(os.path.abspath(__file__))
+    
     try:
         subprocess.check_call([
             sys.executable, 
@@ -32,7 +36,7 @@ def install_dependencies():
             "pip", 
             "install", 
             "-e", 
-            "."
+            package_dir
         ])
         print("✅ Dependencies installed")
         return True
